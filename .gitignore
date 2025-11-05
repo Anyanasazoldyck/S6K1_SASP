@@ -1,0 +1,12 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.png
+.csv
+
+*.csv
+*.png
+*.Rproj
+*.RData
+results/hm_Friedm
