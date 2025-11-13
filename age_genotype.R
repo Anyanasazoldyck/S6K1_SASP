@@ -5,7 +5,7 @@ library(biomaRt)
 library(ggplot2)
 library(ggrepel)
 library(pheatmap)
-library(msigdbr)
+
 library(amap)
 
 #set -----------------------
@@ -92,57 +92,47 @@ write.table(em_out, file="EM.csv",row.names=FALSE, sep="\t", quote = FALSE)
 
 #extract dd----------------
 old_wt_vs_young =as.data.frame( results(dds, c("sample_group","S6K1_WT_old","S6K1_WT_young")) )
-old_wt_vs_young_sig <- old_wt_vs_young[
-  old_wt_vs_young$padj < 0.05 & 
-  old_wt_vs_young$log2FoldChange > 1,
-]
 
-write.table(old_wt_vs_young_sig, file="old_wt_vs_young_sig.csv",row.names=FALSE, sep="\t", quote = FALSE)
+write.table(old_wt_vs_young_sig, file="old_wt_vs_young.csv",row.names=FALSE, sep="\t", quote = FALSE)
 
 
 old_KO_vs_young = as.data.frame(results(dds, c("sample_group","S6K1_KO_old","S6K1_WT_young")) )
-old_KO_vs_young_sig <- old_KO_vs_young[
-  old_KO_vs_young$padj < 0.05 & 
-    old_KO_vs_young$log2FoldChange > 1,
-]
-write.table(old_KO_vs_young_sig, file="old_KO_vs_young_sig.csv",row.names=FALSE, sep="\t", quote = FALSE)
+
+write.table(old_KO_vs_young_sig, file="old_KO_vs_young.csv",row.names=FALSE, sep="\t", quote = FALSE)
 
 old_KO_vs_WT = as.data.frame(results(dds, c("sample_group","S6K1_KO_old","S6K1_WT_old")) )
-old_KO_vs_WT_sig <- old_KO_vs_WT[
-  old_KO_vs_WT$padj < 0.05 & 
-    old_KO_vs_WT$log2FoldChange > 1,
-]
-write.table(old_KO_vs_WT_sig, file="old_KO_vs_WT_sig.csv",row.names=FALSE, sep="\t", quote = FALSE)
+
+write.table(old_KO_vs_WT_sig, file="old_KO_vs_WT.csv",row.names=FALSE, sep="\t", quote = FALSE)
 
 
 #make a master table ################
 #--- Add gene column ---
-old_wt_vs_young$gene <- rownames(old_wt_vs_young)
-old_KO_vs_young$gene <- rownames(old_KO_vs_young)
-old_KO_vs_WT$gene    <- rownames(old_KO_vs_WT)
+#old_wt_vs_young$gene <- rownames(old_wt_vs_young)
+#old_KO_vs_young$gene <- rownames(old_KO_vs_young)
+#old_KO_vs_WT$gene    <- rownames(old_KO_vs_WT)
 
 #--- Keep only key columns for merging ---
-cols <- c("gene","log2FoldChange","pvalue","padj")
+#cols <- c("gene","log2FoldChange","pvalue","padj")
 
-old_wt_vs_young_sub <- old_wt_vs_young[, cols]
-old_KO_vs_young_sub <- old_KO_vs_young[, cols]
-old_KO_vs_WT_sub    <- old_KO_vs_WT[, cols]
+#old_wt_vs_young_sub <- old_wt_vs_young[, cols]
+#old_KO_vs_young_sub <- old_KO_vs_young[, cols]
+#old_KO_vs_WT_sub    <- old_KO_vs_WT[, cols]
 
 #--- Merge into a single master table ---
-master <- Reduce(function(x, y) merge(x, y, by="gene", all=TRUE),
-                 list(old_wt_vs_young_sub, old_KO_vs_young_sub, old_KO_vs_WT_sub))
+#master <- Reduce(function(x, y) merge(x, y, by="gene", all=TRUE),
+  #               list(old_wt_vs_young_sub, old_KO_vs_young_sub, old_KO_vs_WT_sub))
 
 #--- Rename columns for clarity ---
-colnames(master) <- c("gene",
-                      "log2FC_WTold_vs_WTyoung", "pval_WTold_vs_WTyoung", "padj_WTold_vs_WTyoung",
-                      "log2FC_KOold_vs_WTyoung", "pval_KOold_vs_WTyoung", "padj_KOold_vs_WTyoung",
-                      "log2FC_KOold_vs_WTold",  "pval_KOold_vs_WTold",  "padj_KOold_vs_WTold")
+#colnames(master) <- c("gene",
+   #                   "log2FC_WTold_vs_WTyoung", "pval_WTold_vs_WTyoung", "padj_WTold_vs_WTyoung",
+    #                  "log2FC_KOold_vs_WTyoung", "pval_KOold_vs_WTyoung", "padj_KOold_vs_WTyoung",
+     #                 "log2FC_KOold_vs_WTold",  "pval_KOold_vs_WTold",  "padj_KOold_vs_WTold")
 
 #--- Add expression matrix (em) ---
 # assumes em has genes as rownames
-em_df <- data.frame(gene = rownames(em), em)
-master <- merge(master, em_df, by="gene", all.x=TRUE)
-write.table(master, file="master.csv",row.names=FALSE, sep="\t", quote = FALSE)
+#em_df <- data.frame(gene = rownames(em), em)
+#master <- merge(master, em_df, by="gene", all.x=TRUE)
+#write.table(master, file="master.csv",row.names=FALSE, sep="\t", quote = FALSE)
 
 
 #run PCA####################
@@ -179,12 +169,7 @@ sen <- msigdbr(species = "Mus musculus", category = "C2", subcategory = "CGP") %
   pull(gene_symbol)
 
 #old WT vs. young WT in sen -------
-sen_WT_old_vs_WT_young <- intersect(sen, rownames(old_wt_vs_young_sig))#"Cdkn2a" "Esm1"   "Igfbp5" "Irf7"   "Ndn"    "Nrg1"  
-sen_KO_old_vs_WT_young <- intersect(sen, rownames(old_KO_vs_young_sig))#"Cdkn2a" "Esm1"   "Igfbp5"
-sen_KO_old_vs_WT_old <- intersect(sen, rownames(old_KO_vs_WT_sig)) #zero sig genes 
 
-View(sen_wt_old_vs_young)
-master_sen <- master[master$gene%in%sen,]
 genes_in_paper <- c("Smurf2","Rab13","Cryab","Igfbp5","Cdkn2a","Thbs1","Gsn","Rras","Ndn",
            "Esm1","Vim","S100a11","Irf7","Tnfaip3","Nlrg1")
 
@@ -201,3 +186,151 @@ p<-pheatmap(
   clustering_distance_cols = "euclidean"
 )
 ggsave("results/heatmap_Friedman.png", width = 10, height = 6)
+png(p,"results/heatmap_Friedman.png" )
+#------------------------------------path analysis ------------------------
+library(clusterProfiler)
+library(msigdbr)
+library(org.Mm.eg.db)
+
+# what are the pathways unregulated in old WT vs. young wt ?######
+#prepare Kegg gene set 
+msi_hallmark <- msigdbr(species = "mouse", collection = "H") %>% 
+  dplyr::select(gs_name,gene_symbol)
+
+#prepare gene list
+gene_list <- old_wt_vs_young$log2FoldChange
+names(gene_list)<- rownames(old_wt_vs_young)
+gene_list<- gene_list[!is.na(gene_list)]
+head(gene_list)
+gene_list<- sort(gene_list,decreasing = T)
+
+#run gsea
+gsea_results <- clusterProfiler::GSEA(geneList = gene_list,
+                                      TERM2GENE    = msi_hallmark,
+                                      pvalueCutoff = 0.05,pAdjustMethod = "BH",
+                                      verbose      = FALSE
+                                  )
+#visualize 
+gsea_df<- gsea_results@result
+top_gsea <- gsea_df[gsea_df$p.adjust<0.05,]
+p<- give_me_pretty_top_gsea(top_gsea = top_gsea, analysis = "Old WT Vs. Young WT", context = "Mouse Liver")
+ggsave("results/hallmark_oldwt_vs_youngwt.png", width = 8, height = 8)
+
+
+
+#what is the difference between KO and WT in old mice?
+#prepare gene list
+gene_list <- old_KO_vs_WT$log2FoldChange
+names(gene_list)<- rownames(old_KO_vs_WT)
+gene_list<- gene_list[!is.na(gene_list)]
+head(gene_list)
+gene_list<- sort(gene_list,decreasing = T)
+
+#run gsea
+gsea_results <- clusterProfiler::GSEA(geneList = gene_list,
+                                      TERM2GENE    = msi_hallmark,
+                                      pvalueCutoff = 0.05,pAdjustMethod = "BH",
+                                      verbose      = FALSE
+)
+#visualize 
+gsea_df<- gsea_results@result
+top_gsea <- gsea_df[gsea_df$p.adjust<0.05,]
+p<- give_me_pretty_top_gsea(top_gsea = top_gsea, analysis = "Old KO Vs. Old WT", context = "Mouse Liver")
+ggsave("results/hallmark_oldKO_vs_oldwt.png", width = 8, height = 8)
+
+#------------------inflammation across the three conditions ---------------------------
+inflamm_pathways <- c("HALLMARK_ALLOGRAFT_REJECTION",      
+"HALLMARK_INTERFERON_GAMMA_RESPONSE", "HALLMARK_INFLAMMATORY_RESPONSE",    
+ "HALLMARK_TNFA_SIGNALING_VIA_NFKB" , "HALLMARK_IL6_JAK_STAT3_SIGNALING" ,
+"HALLMARK_INTERFERON_ALPHA_RESPONSE","HALLMARK_IL2_STAT5_SIGNALING",      
+"HALLMARK_COMPLEMENT"       )
+
+#get candidate genes ###############
+candidat_genes <- list()
+
+for (gs in inflamm_pathways) {
+
+  path_genes <- as.character(top_gsea[  top_gsea$ID==gs, "core_enrichment"])
+  path_genes <- unlist(strsplit(path_genes, "/"))
+  pathway_name <- gs
+  candidat_genes[[pathway_name]] <- path_genes
+}
+candidat_df <- stack(candidat_genes)
+colnames(candidat_df) <- c("gene", "pathway")
+candidat_df<- candidat_df%>% distinct(gene,.keep_all = TRUE)
+
+
+#select the top 20 significant gene in each analysis-----
+#analysis 1 : ko vs. wt
+old_KO_vs_WT$gene <- rownames(old_KO_vs_WT)
+top_in_old_KO_vs_old_wt <- old_KO_vs_WT[old_KO_vs_WT$gene %in% candidat_df$gene, ]
+top_in_old_KO_vs_old_wt <- top_in_old_KO_vs_old_wt[top_in_old_KO_vs_old_wt$padj < 0.05, ]
+top_in_old_KO_vs_old_wt <- na.omit(top_in_old_KO_vs_old_wt)
+
+old_wt_vs_young$gene<- rownames(old_wt_vs_young)
+top_in_old_vs_young_wt <- old_wt_vs_young[old_wt_vs_young$gene %in% candidat_df$gene, ]
+top_in_old_vs_young_wt <- top_in_old_vs_young_wt[top_in_old_vs_young_wt$padj < 0.05, ]
+top_in_old_vs_young_wt<- na.omit(top_in_old_vs_young_wt)
+set1 <- rownames(top_in_old_KO_vs_old_wt)
+set2 <- rownames(top_in_old_vs_young_wt)
+
+
+#common genes 
+# Load library
+library(ggVennDiagram)
+
+set1 <-top_in_old_KO_vs_old_wt$gene
+set2<- top_in_old_vs_young_wt$gene
+common <-intersect(x=set1, y=set2)
+
+gg <- ggVennDiagram(list(
+  "Old KO vs Old WT" = set1,
+  "Old WT vs Young WT" = set2
+))
+
+ggsave("venn_diagram.png", gg, width = 6, height = 6, dpi = 300)
+
+
+#plot a heatmap of the common genes ####
+em_inflam <- em_scaled[rownames(em_scaled) %in% common,]
+em_inflam<-as.matrix(em_inflam)
+
+
+
+p<-pheatmap(
+  em_inflam,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  show_colnames = TRUE,
+  show_rownames = TRUE,
+  clustering_distance_rows = "euclidean",
+  clustering_distance_cols = "euclidean"
+)
+png("results/hm_common_inflamm_genes.png")
+p
+dev.off()
+
+#plot the genes from the paper using EM #####
+paper_genes <- c(
+  "Mmp13","Ccl4","Lgals1","Cxcl10","Ccl2","Col5a1","Cxcl9","Napsa",
+  "Angptl7","Tgfb1","Il1a","Mmp7","Mmp12","Ccl5","Gdf3","Ccl3","Nrg1",
+  "Timp1","Nptx1","Ccl6","Lgals3","Il1b","Fgf13","Il6","Serpine1"
+)
+
+em_inflam <- em_scaled[rownames(em_scaled) %in% paper_genes,]
+em_inflam<-as.matrix(em_inflam)
+
+
+
+p<-pheatmap(
+  em_inflam,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  show_colnames = TRUE,
+  show_rownames = TRUE,
+  clustering_distance_rows = "euclidean",
+  clustering_distance_cols = "euclidean"
+)
+png("results/hm_common_inflamm_genes_from_paper.png", res= 300 ,width =300* 8, height = 300*8)
+p
+dev.off()
